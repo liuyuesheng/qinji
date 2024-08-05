@@ -10,6 +10,7 @@ import { getClientConfig } from "../config/client";
 import { createPersistStore } from "../utils/store";
 import { ensure } from "../utils/clone";
 import { DEFAULT_CONFIG } from "./config";
+import { qxlog } from "@/app/qx/util";
 
 let fetchState = 0; // 0 not fetch, 1 fetching, 2 done
 
@@ -178,6 +179,7 @@ export const useAccessStore = createPersistStore(
       );
     },
     fetch() {
+      qxlog("从服务器的/api/config接口获取配置");
       if (fetchState > 0 || getClientConfig()?.buildMode === "export") return;
       fetchState = 1;
       fetch("/api/config", {

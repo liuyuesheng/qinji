@@ -8,7 +8,8 @@ import {
   ServiceProvider,
 } from "../constant";
 import { createPersistStore } from "../utils/store";
-
+import { qx_ernie_35_8K_0613 } from "@/app/qx/QxConstant";
+//qx:定义ModelType 枚举是 DEFAULT_MODELS 属性的name
 export type ModelType = (typeof DEFAULT_MODELS)[number]["name"];
 
 export enum SubmitKey {
@@ -49,8 +50,8 @@ export const DEFAULT_CONFIG = {
   models: DEFAULT_MODELS as any as LLMModel[],
 
   modelConfig: {
-    model: "gpt-3.5-turbo" as ModelType,
-    providerName: "OpenAI" as ServiceProvider,
+    model: qx_ernie_35_8K_0613 as ModelType,
+    providerName: "Baidu" as ServiceProvider,
     temperature: 0.5,
     top_p: 1,
     max_tokens: 4000,

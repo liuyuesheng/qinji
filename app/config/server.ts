@@ -101,6 +101,7 @@ function getApiKey(keys?: string) {
   return apiKey;
 }
 
+//qx:获取服务器支持的model类型，但是没有请求服务器，而是直接拿的DEFAULT_MODELS字段
 export const getServerSideConfig = () => {
   if (typeof process === "undefined") {
     throw Error(

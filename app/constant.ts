@@ -1,4 +1,10 @@
 export const OWNER = "ChatGPTNextWeb";
+import { qxlog } from "@/app/qx/util";
+import {
+  qx_ernie_35_8K_0613,
+  qx_ernie_lite_8k_0922,
+} from "@/app/qx/QxConstant";
+
 export const REPO = "ChatGPT-Next-Web";
 export const REPO_URL = `https://github.com/${OWNER}/${REPO}`;
 export const ISSUE_URL = `https://github.com/${OWNER}/${REPO}/issues`;
@@ -166,6 +172,7 @@ export const Google = {
 export const Baidu = {
   ExampleEndpoint: BAIDU_BASE_URL,
   ChatPath: (modelName: string) => {
+    qxlog("通过baidu model获取请求path");
     let endpoint = modelName;
     if (modelName === "ernie-4.0-8k") {
       endpoint = "completions_pro";
@@ -178,6 +185,10 @@ export const Baidu = {
     }
     if (modelName === "ernie-speed-8k") {
       endpoint = "ernie_speed";
+    }
+
+    if (modelName === qx_ernie_lite_8k_0922) {
+      endpoint = "eb-instant";
     }
     return `rpc/2.0/ai_custom/v1/wenxinworkshop/chat/${endpoint}`;
   },
@@ -275,7 +286,7 @@ const anthropicModels = [
   "claude-3-5-sonnet-20240620",
 ];
 
-const baiduModels = [
+export const baiduModels = [
   "ernie-4.0-turbo-8k",
   "ernie-4.0-8k",
   "ernie-4.0-8k-preview",
@@ -287,6 +298,9 @@ const baiduModels = [
   "ernie-speed-8k",
   "ernie-lite-8k",
   "ernie-tiny-8k",
+
+  qx_ernie_lite_8k_0922,
+  qx_ernie_35_8K_0613,
 ];
 
 const bytedanceModels = [

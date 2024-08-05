@@ -3,6 +3,7 @@ import {
   ApiPath,
   Baidu,
   BAIDU_BASE_URL,
+  baiduModels,
   REQUEST_TIMEOUT_MS,
 } from "@/app/constant";
 import { useAccessStore, useAppConfig, useChatStore } from "@/app/store";
@@ -23,6 +24,7 @@ import {
 import { prettyObject } from "@/app/utils/format";
 import { getClientConfig } from "@/app/config/client";
 import { getMessageTextContent } from "@/app/utils";
+import { qxlog } from "@/app/qx/util";
 
 export interface OpenAIListModelResponse {
   object: string;
@@ -143,7 +145,7 @@ export class ErnieApi implements LLMApi {
         () => controller.abort(),
         REQUEST_TIMEOUT_MS,
       );
-
+      qxlog(`baidu 流式:${shouldStream}`);
       if (shouldStream) {
         let responseText = "";
         let remainText = "";
@@ -182,14 +184,14 @@ export class ErnieApi implements LLMApi {
         };
 
         controller.signal.onabort = finish;
-
+        qxlog(`baidu chatPayload:${JSON.stringify(chatPayload)}`);
         fetchEventSource(chatPath, {
           ...chatPayload,
           async onopen(res) {
             clearTimeout(requestTimeoutId);
             const contentType = res.headers.get("content-type");
             console.log("[Baidu] request response content type: ", contentType);
-
+            qxlog("baidu open");
             if (contentType?.startsWith("text/plain")) {
               responseText = await res.clone().text();
               return finish();
@@ -223,6 +225,7 @@ export class ErnieApi implements LLMApi {
             }
           },
           onmessage(msg) {
+            qxlog("baidu on text");
             if (msg.data === "[DONE]" || finished) {
               return finish();
             }
@@ -267,7 +270,15 @@ export class ErnieApi implements LLMApi {
   }
 
   async models(): Promise<LLMModel[]> {
-    return [];
+    return baiduModels.map((name) => ({
+      name,
+      available: true,
+      provider: {
+        id: "baidu",
+        providerName: "Baidu",
+        providerType: "baidu",
+      },
+    }));
   }
 }
 export { Baidu };

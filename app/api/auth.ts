@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { getServerSideConfig } from "../config/server";
 import md5 from "spark-md5";
 import { ACCESS_CODE_PREFIX, ModelProvider } from "../constant";
+import { qxlog } from "@/app/qx/util";
+import { decodeToken } from "@/app/qx/store/util";
 
 function getIP(req: NextRequest) {
   let ip = req.ip ?? req.headers.get("x-real-ip");
@@ -25,6 +27,7 @@ function parseApiKey(bearToken: string) {
 }
 
 export function auth(req: NextRequest, modelProvider: ModelProvider) {
+  qxlog(`auth 本地检查 apiKey 和 accessCode`);
   const authToken = req.headers.get("Authorization") ?? "";
 
   // check if it is openai api key or user token
@@ -39,7 +42,29 @@ export function auth(req: NextRequest, modelProvider: ModelProvider) {
   console.log("[User IP] ", getIP(req));
   console.log("[Time] ", new Date().toLocaleString());
 
+  if (!apiKey && accessCode) {
+    qxlog("做我们得百度鉴权");
+
+    try {
+      const token = decodeToken(accessCode);
+      if (token) {
+        const exp = token.exp - Math.floor(Date.now() / 1000);
+        if (exp < 0) {
+          const date = new Date(exp * 1000);
+          return {
+            error: true,
+            msg: `账号已于${date.getFullYear()}年-${
+              date.getMonth() + 1
+            }月-${date.getDate()}日过期`,
+          };
+        }
+      }
+    } catch (e) {
+      console.log(`decodeToken error:${e}`);
+    }
+  }
   if (serverConfig.needCode && !serverConfig.codes.has(hashedCode) && !apiKey) {
+    qxlog("检查传过来的accessCode是否为空，且api为空");
     return {
       error: true,
       msg: !accessCode ? "empty access code" : "wrong access code",

@@ -11,6 +11,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/api/auth";
 import { isModelAvailableInServer } from "@/app/utils/model";
 import { getAccessToken } from "@/app/utils/baidu";
+import { qxlog } from "@/app/qx/util";
+import { decodeToken } from "@/app/qx/store/util";
 
 const serverConfig = getServerSideConfig();
 
@@ -18,19 +20,23 @@ async function handle(
   req: NextRequest,
   { params }: { params: { path: string[] } },
 ) {
-  console.log("[Baidu Route] params ", params);
-
   if (req.method === "OPTIONS") {
     return NextResponse.json({ body: "OK" }, { status: 200 });
   }
-
+  console.log(`baidu req:${JSON.stringify(req)}`);
   const authResult = auth(req, ModelProvider.Ernie);
+  console.log(`baidu authResult:${JSON.stringify(authResult)}`);
   if (authResult.error) {
     return NextResponse.json(authResult, {
       status: 401,
     });
   }
 
+  console.log(
+    `baidu !serverConfig.baiduApiKey:${!serverConfig.baiduApiKey}，serverConfig.baiduSecretKey:${
+      serverConfig.baiduSecretKey
+    }`,
+  );
   if (!serverConfig.baiduApiKey || !serverConfig.baiduSecretKey) {
     return NextResponse.json(
       {
@@ -44,6 +50,7 @@ async function handle(
   }
 
   try {
+    console.log("baidu request");
     const response = await request(req);
     return response;
   } catch (e) {
@@ -55,7 +62,7 @@ async function handle(
 export const GET = handle;
 export const POST = handle;
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const preferredRegion = [
   "arn1",
   "bom1",
@@ -105,8 +112,9 @@ async function request(req: NextRequest) {
     serverConfig.baiduApiKey as string,
     serverConfig.baiduSecretKey as string,
   );
-  const fetchUrl = `${baseUrl}${path}?access_token=${access_token}`;
 
+  const fetchUrl = `${baseUrl}${path}?access_token=${access_token}`;
+  qxlog(`fetchUrl:${fetchUrl}`);
   const fetchOptions: RequestInit = {
     headers: {
       "Content-Type": "application/json",
@@ -150,6 +158,7 @@ async function request(req: NextRequest) {
     }
   }
   try {
+    qxlog(`1 baidu execute fetchOptions:${JSON.stringify(fetchOptions)}`);
     const res = await fetch(fetchUrl, fetchOptions);
 
     // to prevent browser prompt for credentials

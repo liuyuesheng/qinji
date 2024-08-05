@@ -1,5 +1,7 @@
 "use client";
 
+import { getServerSideConfig } from "@/app/config/server";
+
 require("../polyfill");
 
 import { useState, useEffect } from "react";
@@ -29,6 +31,7 @@ import { AuthPage } from "./auth";
 import { getClientConfig } from "../config/client";
 import { type ClientApi, getClientApi } from "../client/api";
 import { useAccessStore } from "../store";
+import { qxlog } from "@/app/qx/util";
 
 export function Loading(props: { noLogo?: boolean }) {
   return (
@@ -197,9 +200,14 @@ export function useLoadData() {
   const config = useAppConfig();
 
   const api: ClientApi = getClientApi(config.modelConfig.providerName);
-
+  qxlog(
+    "在ts里。如果 {}只有一个执行语句，默认会当成返回值，比如{‘aaa’} 但如果你有多个,就必须加return { ...  return 'aaa'}",
+  );
   useEffect(() => {
     (async () => {
+      qxlog(
+        "在装载时执行,这种写法等于立即执行了这个异步方法,因为dep = []，所以只在装载的时候执行，没有变化触发",
+      );
       const models = await api.llm.models();
       config.mergeModels(models);
     })();
@@ -208,12 +216,15 @@ export function useLoadData() {
 }
 
 export function Home() {
+  //ERNIE-Lite-8K-0922
   useSwitchTheme();
   useLoadData();
   useHtmlLang();
-
+  const config = useAppConfig();
+  qxlog(
+    `config.modelConfig.model:${config.modelConfig.providerName},${config.modelConfig.model}`,
+  );
   useEffect(() => {
-    console.log("[Config] got config from build time", getClientConfig());
     useAccessStore.getState().fetch();
   }, []);
 
