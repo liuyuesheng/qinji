@@ -27,7 +27,7 @@ function parseApiKey(bearToken: string) {
 }
 
 export function auth(req: NextRequest, modelProvider: ModelProvider) {
-  qxlog(`auth 本地检查 apiKey 和 accessCode`);
+  qxlog(`auth 本地检查 apiKey 和 accessCode:${process.env.CODE}`);
   const authToken = req.headers.get("Authorization") ?? "";
 
   // check if it is openai api key or user token
@@ -36,6 +36,7 @@ export function auth(req: NextRequest, modelProvider: ModelProvider) {
   const hashedCode = md5.hash(accessCode ?? "").trim();
 
   const serverConfig = getServerSideConfig();
+  console.log("[Auth] allowed hashed codes: ", [...serverConfig.codes]);
   console.log("[Auth] allowed hashed codes: ", [...serverConfig.codes]);
   console.log("[Auth] got access code:", accessCode);
   console.log("[Auth] hashed access code:", hashedCode);

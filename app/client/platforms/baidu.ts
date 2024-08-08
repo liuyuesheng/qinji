@@ -15,6 +15,7 @@ import {
   LLMApi,
   LLMModel,
   MultimodalContent,
+  RequestMessage,
 } from "../api";
 import Locale from "../../locales";
 import {
@@ -47,6 +48,7 @@ interface RequestPayload {
   frequency_penalty: number;
   top_p: number;
   max_tokens?: number;
+  system?: string;
 }
 
 export class ErnieApi implements LLMApi {
@@ -76,21 +78,53 @@ export class ErnieApi implements LLMApi {
 
     return [baseUrl, path].join("/");
   }
-
+  //保证奇数
+  formatData(data: RequestMessage[]) {
+    const alen = data.length;
+    //偶数个,删除第一个
+    if (alen % 2 == 0) {
+      //长度为1，放一个空数据
+      if (alen == 0) {
+        data.unshift({
+          role: "user",
+          content: " ",
+        });
+      }
+      //大于0 至少为2，删除一个变成奇数
+      else {
+        data.splice(0, 1);
+      }
+    }
+  }
   async chat(options: ChatOptions) {
-    const messages = options.messages.map((v) => ({
-      role: v.role,
-      content: getMessageTextContent(v),
-    }));
-
-    // "error_code": 336006, "error_msg": "the length of messages must be an odd number",
-    if (messages.length % 2 === 0) {
-      messages.unshift({
-        role: "user",
-        content: " ",
-      });
+    if (options.messages && options.messages.length > 0) {
+      //预设我自己写
+      options.messages.filter((v) => v.role != "system");
     }
 
+    console.log("原始数据:" + JSON.stringify(options.messages));
+    this.formatData(options.messages);
+    //从后往前推。必须是user assistant
+    const reverseData = [...options.messages].reverse();
+    let index = 0;
+    const realData: RequestMessage[] = [];
+    for (const v of reverseData) {
+      const isRight =
+        (index % 2 == 0 && v.role == "user") ||
+        (index % 2 == 1 && v.role == "assistant");
+      if (isRight) {
+        //往前添加元素
+        realData.unshift(v);
+      }
+      //前面错误的数据都不要
+      else {
+        break;
+      }
+      index++;
+    }
+    this.formatData(realData);
+    console.log("realData:" + JSON.stringify(realData));
+    const messages = realData;
     const modelConfig = {
       ...useAppConfig.getState().modelConfig,
       ...useChatStore.getState().currentSession().mask.modelConfig,
@@ -98,10 +132,17 @@ export class ErnieApi implements LLMApi {
         model: options.config.model,
       },
     };
+    const system =
+      "有一个女孩子名叫腿腿，职业是一家工程造价公司的老板，你是的她的专职秘书，名字叫老刘。\
+                             你有专业的工程造价知识，也有多年的考公考编经验，同时你是最了解的腿腿的人。\
+                             比如你知道她喜欢的奶粉牌子是伊利，喜欢的烧烤是南门湾的烧烤\
+                             同时请在回复前帮我获取当前时间，如果当前时间是北京时间20点以后，你要在回复前加上，该早点休息啦腿腿\
+                             ";
 
     const shouldStream = !!options.config.stream;
     const requestPayload: RequestPayload = {
       messages,
+      system,
       stream: shouldStream,
       model: modelConfig.model,
       temperature: modelConfig.temperature,
