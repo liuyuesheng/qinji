@@ -287,6 +287,7 @@ const anthropicModels = [
 ];
 
 export const baiduModels = [
+  qx_ernie_35_8K_0613,
   "ernie-4.0-turbo-8k",
   "ernie-4.0-8k",
   "ernie-4.0-8k-preview",
@@ -300,7 +301,6 @@ export const baiduModels = [
   "ernie-tiny-8k",
 
   qx_ernie_lite_8k_0922,
-  qx_ernie_35_8K_0613,
 ];
 
 const bytedanceModels = [
